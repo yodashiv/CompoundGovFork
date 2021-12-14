@@ -1,4 +1,4 @@
-# Solidity Template
+# Compound Governance Fork
 
 Uses
 
