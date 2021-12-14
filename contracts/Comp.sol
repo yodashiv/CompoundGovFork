@@ -24,7 +24,9 @@ contract Comp {
     // mapping (address => address) public delegates;
 
     /// @Notice: Modification: mapping from delegator -> delegate -> delegated amount
-    mapping (address => mapping (address => uint96)) public delegates;
+    mapping (address => mapping (address => uint96)) public delegatesToDelegateesToAmount;
+
+    mapping (address => address[]) public delegatesToDelegatees;
 
     /// @notice A checkpoint for marking number of votes from a given block
     struct Checkpoint {
@@ -162,7 +164,7 @@ contract Comp {
      * @param r Half of the ECDSA signature pair
      * @param s Half of the ECDSA signature pair
      */
-    function delegateBySig(address delegatee, uint nonce, uint expiry, uint8 v, bytes32 r, bytes32 s) public {
+    function delegateBySig(address delegatee, uint nonce, uint expiry, uint8 v, bytes32 r, bytes32 s, uint96 amount) public {
         bytes32 domainSeparator = keccak256(abi.encode(DOMAIN_TYPEHASH, keccak256(bytes(name)), getChainId(), address(this)));
         bytes32 structHash = keccak256(abi.encode(DELEGATION_TYPEHASH, delegatee, nonce, expiry));
         bytes32 digest = keccak256(abi.encodePacked("\x19\x01", domainSeparator, structHash));
@@ -170,7 +172,7 @@ contract Comp {
         require(signatory != address(0), "Comp::delegateBySig: invalid signature");
         require(nonce == nonces[signatory]++, "Comp::delegateBySig: invalid nonce");
         require(now <= expiry, "Comp::delegateBySig: signature expired");
-        return _delegate(signatory, delegatee);
+        return _delegate(signatory, delegatee, amount);
     }
 
     /**
@@ -178,7 +180,7 @@ contract Comp {
      * @param account The address to get votes balance
      * @return The number of current votes for `account`
      */
-    function getCurrentVotes(address account) external view returns (uint96) {
+    function getCurrentVotes(address account) public view returns (uint96) {
         uint32 nCheckpoints = numCheckpoints[account];
         return nCheckpoints > 0 ? checkpoints[account][nCheckpoints - 1].votes : 0;
     }
@@ -229,13 +231,36 @@ contract Comp {
         // uint96 delegatorBalance = balances[delegator];
         // delegates[delegator] = delegatee;
 
-        delegates[delegator][delegatee] = add96(delegates[delegator][delegatee], amount, "Comp::Overflow when adding votes in delegates");
-        balances[delegator] = add96(balances[delegator], amount, "Comp::Overflow when adding votes in balances");
+        delegatesToDelegateesToAmount[delegator][delegatee] = add96(delegatesToDelegateesToAmount[delegator][delegatee], amount, "Comp::Overflow when adding votes in delegates");
+        // balances[delegator] = add96(balances[delegator], amount, "Comp::Overflow when adding votes in balances");
+        bool found = false;
+        for (uint i = 0; i < delegatesToDelegatees[delegator].length; i++) {
+            if (delegatesToDelegatees[delegator][i] == delegatee) {
+                found = true;
+            }
+        }
+        if (!found) {
+            delegatesToDelegatees[delegator].push(delegatee);
+        }
 
-        emit DelegateChanged(delegator, delegatee, delegates[delegator][delegatee]);
+        emit DelegateChanged(delegator, delegatee, delegatesToDelegateesToAmount[delegator][delegatee]);
 
         // _moveDelegates(currentDelegate, delegatee, delegatorBalance);
         _moveDelegates(delegator, delegatee, amount);
+    }
+
+    function _takeBackVotes(address delegator, uint96 amount) internal {
+        for (uint i = 0; i < delegatesToDelegatees[delegator].length; i++) {
+            // How many votes did we give this person?
+            address delegatee = delegatesToDelegatees[delegator][i];
+            uint96 amountDelegated = delegatesToDelegateesToAmount[delegator][delegatee];
+            uint96 amountToTakeBack = amount - amountDelegated < 0 ? amount : amountDelegated;
+            _moveDelegates(delegatee, delegator, amountDelegated);
+            amount = sub96(amount, amountToTakeBack, "Comp::Error sub");
+            if (amount == 0) {
+                break;
+            }
+        }
     }
 
     function _transferTokens(address src, address dst, uint96 amount) internal {
@@ -246,7 +271,12 @@ contract Comp {
         balances[dst] = add96(balances[dst], amount, "Comp::_transferTokens: transfer amount overflows");
         emit Transfer(src, dst, amount);
 
-        _moveDelegates(delegates[src], delegates[dst], amount);
+        uint96 currentVotes = getCurrentVotes(src);
+        if (currentVotes - amount < 0) {
+            _takeBackVotes(src, currentVotes - amount);
+        }
+
+        _moveDelegates(src, dst, amount);
     }
 
     function _moveDelegates(address srcRep, address dstRep, uint96 amount) internal {
@@ -305,5 +335,9 @@ contract Comp {
         uint256 chainId;
         assembly { chainId := chainid() }
         return chainId;
+    }
+
+    function min(uint256 a, uint256 b) internal pure returns (uint256) {
+        return a < b ? a : b;
     }
 }

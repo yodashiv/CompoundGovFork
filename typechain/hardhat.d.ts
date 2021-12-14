@@ -29,6 +29,38 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.Comp__factory>;
     getContractFactory(
+      name: "GovernorBravoDelegate",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.GovernorBravoDelegate__factory>;
+    getContractFactory(
+      name: "CompInterface",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.CompInterface__factory>;
+    getContractFactory(
+      name: "GovernorAlpha",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.GovernorAlpha__factory>;
+    getContractFactory(
+      name: "GovernorBravoDelegateStorageV1",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.GovernorBravoDelegateStorageV1__factory>;
+    getContractFactory(
+      name: "GovernorBravoDelegateStorageV2",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.GovernorBravoDelegateStorageV2__factory>;
+    getContractFactory(
+      name: "GovernorBravoDelegatorStorage",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.GovernorBravoDelegatorStorage__factory>;
+    getContractFactory(
+      name: "GovernorBravoEvents",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.GovernorBravoEvents__factory>;
+    getContractFactory(
+      name: "TimelockInterface",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TimelockInterface__factory>;
+    getContractFactory(
       name: "TestToken",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.TestToken__factory>;
