@@ -61,6 +61,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.TimelockInterface__factory>;
     getContractFactory(
+      name: "IERC20",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IERC20__factory>;
+    getContractFactory(
       name: "TestToken",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.TestToken__factory>;

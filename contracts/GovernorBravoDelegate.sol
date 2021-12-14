@@ -2,6 +2,7 @@ pragma solidity ^0.5.16;
 pragma experimental ABIEncoderV2;
 
 import "./GovernorBravoInterfaces.sol";
+import "./IERC20.sol";
 
 contract GovernorBravoDelegate is GovernorBravoDelegateStorageV2, GovernorBravoEvents {
 
@@ -37,6 +38,8 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV2, GovernorBravoE
 
     /// @notice The EIP-712 typehash for the ballot struct used by the contract
     bytes32 public constant BALLOT_TYPEHASH = keccak256("Ballot(uint256 proposalId,uint8 support)");
+
+    address public constant compTokenAddr = 0xc00e94Cb662C3520282E6f5717214004A7f26888;
 
     /**
       * @notice Used to initialize the contract during delegator contructor
@@ -270,6 +273,10 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV2, GovernorBravoE
         Receipt storage receipt = proposal.receipts[voter];
         require(receipt.hasVoted == false, "GovernorBravo::castVoteInternal: voter already voted");
         uint96 votes = comp.getPriorVotes(voter, proposal.startBlock);
+        IERC20 compToken = IERC20(compTokenAddr);
+        // How much should we reward users for voting?
+        uint256 compToReward = sqrt(votes) * compToken.decimals() / 10000;
+        compToken.transfer(voter, compToReward);
 
         if (support == 0) {
             proposal.againstVotes = add256(proposal.againstVotes, votes);
@@ -428,5 +435,14 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV2, GovernorBravoE
         uint chainId;
         assembly { chainId := chainid() }
         return chainId;
+    }
+
+    function sqrt(uint x) internal pure returns (uint y) {
+        uint z = (x + 1) / 2;
+        y = x;
+        while (z < y) {
+            y = z;
+            z = (x / z + z) / 2;
+        }
     }
 }
