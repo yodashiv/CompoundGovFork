@@ -9,8 +9,7 @@ Uses
 - [Solhint](https://github.com/protofire/solhint): linter
 - [Prettier Plugin Solidity](https://github.com/prettier-solidity/prettier-plugin-solidity): code formatter
 
-This is a GitHub template, which means you can reuse it as many times as you want. You can do that by clicking the "Use this
-template" button at the top of the page.
+A fork of the governance-related modules of the Compound Protocol. Additional incentives are layered on top of the existing protocol to encourage participation from small governance token holders.
 
 ## Usage
 
